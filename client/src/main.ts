@@ -20,7 +20,6 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(size.width / 2, size.height / 2, "bg");
     const mazeEngine= new Maze(55, 50);
     const mapMatrixData = mazeEngine.initializeMaze();
 
@@ -39,17 +38,18 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    /* 
+  
     const nodes = mazeEngine.getNodes();
     graphics.lineStyle(1, 0x880000, 1);
     for (const n of nodes) {
       const nx = n.x * cellSize;
       const ny = n.y * cellSize;
       const pad = Math.max(2, Math.floor(cellSize * 0.15));
-     // graphics.fillStyle(0xff0000, 1);
+     graphics.fillStyle(0xff0000, 1);
       graphics.fillRect(nx + pad, ny + pad, cellSize - pad * 2, cellSize - pad * 2);
     
-    } */
+    } 
+    
   }
 
   update() {
