@@ -16,7 +16,7 @@ export class Maze {
     private stepSize: number; 
     private nodes: { x: number; y: number; id: number }[] = [];
 
-    constructor(width: number, height: number, pathBias: number = 0.4, stepSize: number = 7) {
+    constructor(width: number, height: number, stepSize: number = 7) {
         this.width = width;
         this.height = height;
         this.stepSize = stepSize;
@@ -118,6 +118,32 @@ export class Maze {
 
         } 
 
+        // solving the "island trap" problem w/bfs
+
+        /** Premise of algorithm: so initial painting will be overriding all 0s to 2s by looking at neighbors (BFS). 
+         After no more overriding can be done, it goes through the grid again and changes all 2s back to 0s, 
+         and any current 0s into 1s (walls) */
+        
+         let totalXNodes = Math.floor( (this.width - this.stepSize) / (this.stepSize)) + 1 ; // number of nodes in x direction
+         let totalYNodes = Math.floor( (this.height - this.stepSize) / (this.stepSize)) + 1 ; 
+
+         let midX = this.findMedianCordinate(totalXNodes); // finding center node for BFS starting point
+         let midY = this.findMedianCordinate(totalYNodes);
+
+         this.bfs(grid, midX, midY); 
+
+         for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                if (grid[y][x] === 2) {
+                    grid[y][x] = 0; // change back to open path
+                }
+                else if (grid[y][x] === 0 ){
+                    grid[y][x] = 1; // change to wall if it wasn't visited in bfs
+                }
+            }
+         }
+
+
 
 
         return grid;
@@ -125,6 +151,50 @@ export class Maze {
 
     public getNodes(): { x: number; y: number; id: number }[] {
         return this.nodes;
+    }
+
+    public findMedianCordinate(num: number): number {
+        return Math.floor((num + 1) / 2) * this.stepSize - this.stepSize; 
+    }
+
+    private bfs(grid: number[][], startX: number, startY: number) {
+
+        // queue.push --> end
+        // queue.shift --> removes from beginning
+        grid[startY][startX] = 2; // we don't want to make center a block; 
+        let queue: {x: number, y: number} [] = [{x: startX, y: startY}]; 
+        let visited = new Set<string>(); 
+
+        let directions = [
+            { x: 0, y: -1, label: 'N' }, // Up 1 tile
+            { x: 0, y: 1,  label: 'S' }, // Down 1 tile
+            { x: -1, y: 0, label: 'W' }, // Left 1 tile
+            { x: 1, y: 0,  label: 'E' }  // Right 1 tile
+        ];
+
+        while(queue.length > 0) {
+            let current = queue.shift();
+            const key = `${current?.x},${current?.y}`;
+            
+
+                for (let dir of directions) {
+                    let nx = current.x + dir.x; 
+                    let ny = current.y + dir.y;
+
+                    if (ny >= 0 && ny < this.height) {
+                        const r = grid[ny];
+                        if (r && nx >= 0 && nx < r.length && r[nx] === 0) { // since r[nx] is 0, we know it's a non-visted path so...
+                            r[nx] = 2; // mark as visited
+                            visited.add(`${nx},${ny}`); // add to visited set
+                            queue.push({x: nx, y: ny}); 
+                        }
+                    }
+                }
+            
+        }
+
+
+
     }
 
 
