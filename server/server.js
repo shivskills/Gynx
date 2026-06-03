@@ -1,0 +1,3 @@
+import "./src/networking/server.js"; 
+
+// i may just move all the server code into this file but this may be useful later...
