@@ -9,28 +9,24 @@ export default class PlayerManager {
 
     }
 
-    public addPlayer(id: string, x: number, y: number, sprite: Phaser.GameObjects.Sprite) {
-        const player = new Player(id, x, y, sprite);
+    public addPlayer(id: string, sprite: Phaser.GameObjects.Sprite) {
+        const player = new Player(id, sprite);
         this.players.push(player);
     }
 
-    // this function is just for updating the cords -- not necessarily for updating on the screen
+    // *not for handling input but rather retrieving from server* 
+    // x and y are the changes in cords not the new cords themselves
     public movePlayer(id: string, x: number, y: number) {
         for(const p of this.players) {
             if (p.getId() === id) {
-                p.setCords(x, y);
+                p.displaceCords(x, y);
                 break; 
             }
         }
     }
 
 
-    // this function is always called, and is specifically for updating on the screen
-    public update() {
-        for(const p of this.players) {
-            p.updatePositionOnScreen();
-        }
-    }
+  
 
     public getPlayers(): Player[] {
         return this.players;

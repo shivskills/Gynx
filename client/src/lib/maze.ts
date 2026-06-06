@@ -11,7 +11,7 @@ Thinking of using kruskal's algorithm but this might make the game lack the wind
 a minimum spanning tree (shortest path) --> will probably just implement drunk walk 
 */
 export class Maze {
-    private width: number; 
+    private width: number; // not just nodes
     private height: number; 
     private stepSize: number; 
     private nodes: { x: number; y: number; id: number }[] = [];

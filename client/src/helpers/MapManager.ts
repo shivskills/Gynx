@@ -1,21 +1,18 @@
 
-import {Maze} from "../lib/maze";
 import Phaser from "phaser";
-import PlayerManager from "./PlayerManager";
 const size = { // may change this later depending on responsiveness; 
-  width: 980,
-  height: 1000
+  width: window.innerWidth * 3,
+  height: window.innerHeight
 };
 
 export default class MapManager {
     private maze: number [][]; 
     private scene: Phaser.Scene;
-    private playerManager: PlayerManager;
 
-    constructor(scene: Phaser.Scene, playerManager: PlayerManager) {
+
+    constructor(scene: Phaser.Scene, maze: number[][] ) {
         this.scene = scene;
-        this.playerManager = playerManager;
-        this.maze = new Maze(55, 50).initializeMaze();
+        this.maze = maze;
     }
 
     public createMap() {
@@ -27,9 +24,14 @@ export default class MapManager {
         for (let y = 0; y < rows; y++) {
             for (let x = 0; x < cols; x++) {
                 const val = this.maze[y][x];
-                const color = val === 0 ? 0xffffff : 0x000000;
+                const color = val === 0 ? 0xffffff : 0x300000;
                 graphics.fillStyle(color, 1);
                 graphics.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                if ( val === 0) {
+                    graphics.lineStyle(1,0xD3D3D3 );
+                graphics.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+                
             }
         }
 

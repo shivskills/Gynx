@@ -4,8 +4,8 @@ import Game from "./scenes/game";
 
 const gameCanvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const size = { // may change this later depending on responsiveness; 
-  width: 980,
-  height: 1000
+  width: window.innerWidth,
+  height: window.innerHeight
 };
 
 
