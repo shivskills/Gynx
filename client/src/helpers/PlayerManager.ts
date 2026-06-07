@@ -2,10 +2,12 @@ import Phaser from "phaser";
 import Player from "../lib/Player";
 
 export default class PlayerManager {
-    private players: Player[];   
+    private players: Player[];  
+    private cellSize: number;  
 
-    constructor() {
+    constructor(cellSize: number) {
         this.players = [];
+        this.cellSize = cellSize;
 
     }
 
@@ -19,7 +21,7 @@ export default class PlayerManager {
     public movePlayer(id: string, x: number, y: number) {
         for(const p of this.players) {
             if (p.getId() === id) {
-                p.displaceCords(x, y);
+                p.displaceScreenCords(x * this.cellSize, y * this.cellSize, this.cellSize);
                 break; 
             }
         }

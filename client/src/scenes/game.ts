@@ -7,7 +7,7 @@ import PlayerManager from "../helpers/PlayerManager";
 
 export default class GameScene extends Phaser.Scene {
    private inputHandler!: InputHandler;
-   private playerManager!: PlayerManager; 
+
 
 
   constructor() {
@@ -24,8 +24,8 @@ export default class GameScene extends Phaser.Scene {
   create() {
     
 
-    this.playerManager = new PlayerManager();
-    const socket = new SocketHandler(this, this.playerManager);
+
+    const socket = new SocketHandler(this);
     const inputHandler = new InputHandler(this, socket);
     this.inputHandler = inputHandler;
 
@@ -37,8 +37,8 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
 
-    this.inputHandler.move(); 
-
+    
+    this.inputHandler.move();
     
 
 

@@ -27,15 +27,16 @@ export default class InputHandler {
 
     public move (): void {
         if (this.cursorKeys?.left.isDown || this.wasdKeys?.A.isDown) {
-            this.socketHandler.sendMessage({type: "move", direction: {x: -3, y: 0}});
+            this.socketHandler.sendMessage({type: "move", direction: {x: -.1, y: 0}});
         } else if (this.cursorKeys?.right.isDown || this.wasdKeys?.D.isDown) {
-            this.socketHandler.sendMessage({type: "move", direction: {x: 3, y: 0}});
+            this.socketHandler.sendMessage({type: "move", direction: {x: 0.1, y: 0}});
         } else if (this.cursorKeys?.up.isDown || this.wasdKeys?.W.isDown) {
-            this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: -3}});
+            this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: -.1}});
         } else if (this.cursorKeys?.down.isDown || this.wasdKeys?.S.isDown) {
-            this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: 3}});
+            this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: 0.1}});
+        } else {
+            this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: 0}});
         }
-        return; 
     }
 
 

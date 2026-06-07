@@ -2,11 +2,11 @@ import Phaser from "phaser";
 import PlayerManager from "../helpers/PlayerManager";
 import MapManager from "../helpers/MapManager";
 export default class SocketHandler {
-    private playerManager: PlayerManager; 
+    private playerManager!: PlayerManager; 
     private websocket: WebSocket;
     
-    constructor(scene: Phaser.Scene, playerManager: PlayerManager) {
-        this.playerManager = playerManager; 
+    constructor(scene: Phaser.Scene) {
+        
         const wsUri = "ws://localhost:8000"; 
         this.websocket = new WebSocket(wsUri); 
         
@@ -30,10 +30,11 @@ export default class SocketHandler {
                 }; 
                 case "firstTimePlayer" : { // will add all players including itself (self was not already in game)
                     const mapManager = new MapManager(scene, data.maze);
+                    this.playerManager = new PlayerManager(mapManager.getCellSize()); 
                     mapManager.createMap();
                     for (const p of data.players) { 
                         if  (p.id === data.playerId) {
-                            const gameObject = scene.add.sprite(p.x, p.y, p.texture);
+                            const gameObject = scene.add.sprite(0.5 * mapManager.getCellSize(), 0.5 * mapManager.getCellSize(), p.texture); // p.x, p.y
                             this.playerManager.addPlayer(p.id, gameObject);
                             scene.cameras.main.startFollow(gameObject);
                         }
@@ -51,6 +52,9 @@ export default class SocketHandler {
     } 
 
     public sendMessage(message: object) {
+        if (this.websocket.readyState !== WebSocket.OPEN) {
+            return;
+        }
         this.websocket.send(JSON.stringify(message));
     }
 
