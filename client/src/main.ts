@@ -15,6 +15,12 @@ const config = {
     width: size.width,
     height: size.height, 
     canvas: gameCanvas,
+    physics: {
+      default: 'arcade', 
+      arcade : {
+        debugShowVelocity: true,
+      }
+    }, 
     scene: [Game]
 }
 

@@ -1,7 +1,7 @@
 
 import Phaser from "phaser";
 const size = { // may change this later depending on responsiveness; 
-  width: window.innerWidth * 3,
+  width: window.innerWidth,
   height: window.innerHeight
 };
 
@@ -15,7 +15,7 @@ export default class MapManager {
     constructor(scene: Phaser.Scene, maze: number[][] ) {
         this.scene = scene;
         this.maze = maze;
-        this.cellSize = Math.floor(Math.max(size.width / this.maze[0].length, size.height / this.maze.length)); // either width or height will fit perfectly (ex. width per #cols is cell size)
+        this.cellSize = (Math.min(size.width / this.maze[0].length, size.height / this.maze.length)); // either width or height will fit perfectly (ex. width per #cols is cell size)
     }
 
     public createMap() {
@@ -26,7 +26,7 @@ export default class MapManager {
         for (let y = 0; y < rows; y++) {
             for (let x = 0; x < cols; x++) {
                 const val = this.maze[y][x];
-                const color = val === 0 ? 0xffffff : 0x300000;
+                const color = val === 0 ? 0xffffff : 0x000000;
                 graphics.fillStyle(color, 1);
                 graphics.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
                 if ( val === 0) {

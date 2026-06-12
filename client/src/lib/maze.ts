@@ -23,6 +23,7 @@ export class Maze {
     }
 
     public initializeMaze(): number[][] {
+        // row is len
         const grid: number[][] = Array.from({ length: this.height }, () => new Array(this.width).fill(1)); // 2d array of all 1s
 
         // Node generation

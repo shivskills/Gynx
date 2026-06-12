@@ -2,11 +2,11 @@ import Phaser from "phaser";
 
 import SocketHandler from "../networking/socketHandler";
 import InputHandler from "../helpers/input";
-import PlayerManager from "../helpers/PlayerManager";
 
 
 export default class GameScene extends Phaser.Scene {
    private inputHandler!: InputHandler;
+   private socketHandler!: SocketHandler;
 
 
 
@@ -23,26 +23,26 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     
+    this.socketHandler = new SocketHandler(this);
+    this.inputHandler = new InputHandler(this, this.socketHandler);
 
 
-    const socket = new SocketHandler(this);
-    const inputHandler = new InputHandler(this, socket);
-    this.inputHandler = inputHandler;
 
-
-    // camera.startFollow(gameObject);
+    var camera = this.cameras.main
+    camera.setZoom(5.5) // 5.5
     
     
   }
 
   update() {
 
-    
+
     this.inputHandler.move();
     
 
 
 
   }
+
 }
 
