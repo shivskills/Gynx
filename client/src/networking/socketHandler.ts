@@ -1,10 +1,11 @@
 import PlayerManager from "../helpers/PlayerManager";
 import MapManager from "../helpers/MapManager";
 import GameScene from "../scenes/game";
+import ProjectileManager from "../helpers/ProjectileManager";
 export default class SocketHandler {
     private playerManager!: PlayerManager; 
     private websocket: WebSocket;
-    
+    private projectileManager!: ProjectileManager; 
     constructor(scene: GameScene) {
         
         const wsUri = "ws://localhost:8000"; 
@@ -21,9 +22,18 @@ export default class SocketHandler {
 
             switch (data.type) {
                 case "move": {
-                    this.playerManager.movePlayer(data.playerId, data.dx, data.dy);
+                    this.playerManager.movePlayer(data.movedPlayers);
                     break; 
                 };
+                case "newProjectile" : {
+                    this.projectileManager.addProjectile(data.projId, data.projInfo); 
+                    break; 
+                };
+                case "projectileMove" : {
+                    this.projectileManager.moveProjectile(data.movedProjectiles); 
+                    break;
+                };
+                
                 case "newPlayer": { // only add new people (self was already in game)
                     this.playerManager.addPlayer(data.playerId, data.playerInfo); 
                     break; 
@@ -32,6 +42,7 @@ export default class SocketHandler {
                     const mapManager = new MapManager(scene, data.maze);
                     mapManager.createMap();
                     this.playerManager = new PlayerManager(scene, mapManager.getCellSize(), data.playerId, data.players, data.serverCellSize); 
+                    this.projectileManager = new ProjectileManager(scene, mapManager.getCellSize(), data.projectiles, data.serverCellSize); 
                     break;
                 }
                 case "removePlayer" : {

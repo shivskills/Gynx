@@ -12,6 +12,7 @@ export default class InputHandler {
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
   } | undefined;
+    private spaceKey: Phaser.Input.Keyboard.Key; 
 
 
 
@@ -24,6 +25,11 @@ export default class InputHandler {
             A: Phaser.Input.Keyboard.KeyCodes.A,
             S: Phaser.Input.Keyboard.KeyCodes.S,
             D: Phaser.Input.Keyboard.KeyCodes.D
+        });
+        this.spaceKey = this.scene.input.keyboard?.addKey('SPACE')
+
+        this.spaceKey.on("up", (event: KeyboardEvent) => {
+            this.socketHandler.sendMessage({ type: "projectile" });
         });
 
     }
@@ -39,6 +45,7 @@ export default class InputHandler {
         } else if (this.cursorKeys?.down.isDown || this.wasdKeys?.S.isDown) {
             this.socketHandler.sendMessage({type: "move", direction: {x: 0, y: 1}});
         } 
+
 
         return; 
     }

@@ -42,13 +42,13 @@ export default class PlayerManager {
 
     // *not for handling input but rather retrieving from server* 
     // x and y are the change in coords in world coords
-    public movePlayer(id: string, x: number, y: number) {
-        const player = this.players.get(id); 
-        if (player) {
-           player.sprite.setX(player.sprite.x += x * (this.cellSize / this.serverCellSize));
-           player.sprite.setY(player.sprite.y += y * (this.cellSize / this.serverCellSize)); 
+    public movePlayer(movedPlayers: [string, { x: number; y: number }][]) {
+        for (const [playerId, value] of movedPlayers) {
+            const player = this.players.get(playerId)
+            player?.sprite.setX(value.x * (this.cellSize / this.serverCellSize)); 
+            player?.sprite.setY(value.y * (this.cellSize / this.serverCellSize))
+
         }
-    
     }
 
     public removePlayer(id: string): void {
