@@ -20,15 +20,27 @@ export default class ProjectileManager {
         this.serverCellSize = serverCellSize; 
         this.scene = scene; 
 
+        const graphics = this.scene.add.graphics();
+        
+        graphics.fillStyle(0x000000, 1); 
+        graphics.fillRect(0, 0, cellSize, 0.1 * cellSize); 
+        graphics.generateTexture("projectileHorizontal", cellSize,  .1 * cellSize);
+        
+        graphics.fillRect(0, 0, 0.1 * cellSize, cellSize); 
+        graphics.generateTexture("projectileVertical", .1* cellSize, cellSize);
+        graphics.destroy(); 
+
         const projectilesMap = new Map<string, Projectile>(); 
         for (const [key, projectile] of arr) { 
-            projectilesMap.set(key, {playerId: projectile.playerId, sprite: scene.physics.add.sprite(projectile.x * (this.cellSize / this.serverCellSize), projectile.y * (this.cellSize / this.serverCellSize), projectile.texture).setScale(0.5), finalArrX: projectile.finalArrX, finalArrY: projectile.finalArrY, alive: projectile.alive, direction: {x: projectile.direction.x, y: projectile.direction.y} }) ;
+            projectilesMap.set(key, {playerId: projectile.playerId, sprite: scene.physics.add.sprite(projectile.x * (this.cellSize / this.serverCellSize), projectile.y * (this.cellSize / this.serverCellSize), projectile.texture), finalArrX: projectile.finalArrX, finalArrY: projectile.finalArrY, alive: projectile.alive, direction: {x: projectile.direction.x, y: projectile.direction.y} }) ;
         }
         this.projectiles = projectilesMap; 
+
+        
     }
 
     public addProjectile(projId: string, projInfo: { playerId: string, x: number, y: number, texture: string, finalArrX: number, finalArrY: number, alive: boolean, direction: {x: number, y: number}}) {
-       this.projectiles.set(projId, {sprite: this.scene.physics.add.sprite(projInfo.x * ((this.cellSize / this.serverCellSize)), projInfo.y * (this.cellSize / this.serverCellSize), projInfo.texture).setScale(0.5), finalArrX: projInfo.finalArrX, finalArrY: projInfo.finalArrY, alive: projInfo.alive, direction: {x: projInfo.direction.x, y: projInfo.direction.y}, playerId: projInfo.playerId} );
+       this.projectiles.set(projId, {sprite: this.scene.physics.add.sprite(projInfo.x * ((this.cellSize / this.serverCellSize)), projInfo.y * (this.cellSize / this.serverCellSize), projInfo.texture), finalArrX: projInfo.finalArrX, finalArrY: projInfo.finalArrY, alive: projInfo.alive, direction: {x: projInfo.direction.x, y: projInfo.direction.y}, playerId: projInfo.playerId} )
     }
 
     public moveProjectile(movedProjectiles: [string, { x: number; y: number }][]) {
@@ -37,6 +49,14 @@ export default class ProjectileManager {
             projectile?.sprite.setX(value.x * (this.cellSize / this.serverCellSize)); 
             projectile?.sprite.setY(value.y * (this.cellSize / this.serverCellSize))
 
+        }
+    }
+
+    public removeProjectile(projIds: string[]) {
+
+        for (const projId of projIds) {
+            this.projectiles.get(projId)?.sprite.destroy(); 
+            this.projectiles.delete(projId); 
         }
     }
     

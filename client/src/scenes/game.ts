@@ -25,12 +25,8 @@ export default class GameScene extends Phaser.Scene {
     
     this.socketHandler = new SocketHandler(this);
     this.inputHandler = new InputHandler(this, this.socketHandler);
-
-
-
     var camera = this.cameras.main
-    camera.setZoom(5.5) // 5.5
-    
+    camera.setZoom(5.5) // 5.5    
     
   }
 

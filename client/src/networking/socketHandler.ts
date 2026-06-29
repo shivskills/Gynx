@@ -49,6 +49,10 @@ export default class SocketHandler {
                     this.playerManager.removePlayer(data.id)
                     break; 
                 }
+                case "removeProjectile" : {
+                    this.projectileManager.removeProjectile(data.deletedProjectiles); 
+                    break; 
+                }
                 default: { 
                     console.warn("unknown message from the server: " + data.type)
                 }

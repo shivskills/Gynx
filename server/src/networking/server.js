@@ -9,7 +9,7 @@ const movedPlayers = new Map();
 const projectiles = new Map(); 
 const playerIdToWs = new Map();
 const cellToPlayers = new Map(); // column, row --> player ID
-const inputQueue = []
+let inputQueue = []
 const mazeCols = 55; // treated as width
 const mazeRows = 50; // treated as height
 const tileSize = 32; 
@@ -48,37 +48,12 @@ wss.on('connection', function connection(ws, req) {
         
         switch (obj.type) {
             case 'move': {
-            const player = players.get(ws); 
-            // console.log(`Player at ${player.arrX}, ${player.arrY}`); 
-            const validMove = player.x == player.targetX && player.y == player.targetY && maze[player.arrY + obj.direction.y]?.[player.arrX + obj.direction.x] == 0
-            if (validMove) {
-                player.targetX = player.x + (obj.direction.x) * tileSize; 
-                player.targetY = player.y + (obj.direction.y) * tileSize; 
-                movedPlayers.set(playerId, {x: player.x, y: player.y, xDir: Math.sign(obj.direction.x)  , yDir: Math.sign(obj.direction.y) });
-                player.facing.x =  Math.sign(obj.direction.x); 
-                player.facing.y = Math.sign(obj.direction.y); 
-                
-            } 
-            
+            inputQueue.push({type: "move", player: players.get(ws), direction: obj.direction })
             break; 
             }
 
             case 'projectile' : {
-                const projId = uuidv4(); 
-                const player = players.get(ws); 
-                const finalArr = findProjectileTarget(player.facing, player.arrX, player.arrY); 
-                if (finalArr.x != player.arrX || finalArr.y != player.arrY ) { // 
-                    const facingX = player.facing.x; 
-                    const facingY = player.facing.y
-                    projectiles.set(projId, {playerId: playerId, direction: {x: facingX, y: facingY}, alive: true, x: player.x, y: player.y, finalArrX: finalArr.x, finalArrY: finalArr.y, texture: "player"})
-                    wss.clients.forEach(function each(client) {
-                        if(client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify({ type: 'newProjectile', projInfo: { playerId: playerId, direction: {x: facingX, y: facingY}, alive: true, x: player.x, y: player.y, finalArrX: finalArr.x, finalArrY: finalArr.y, texture: "player"}, projId: projId }));
-                        }
-                    })
-                    console.log(finalArr.x, finalArr.y); 
-                }
-               
+                inputQueue.push({type: "projectile", player: players.get(ws) }); 
                 break; 
             }
 
@@ -129,8 +104,37 @@ const serverTick = setInterval(function gameTick() {
 }, pingInterval); 
 
 function processInput() {
-
-    return; 
+    const current = inputQueue; 
+    inputQueue = [];
+    for (const packet of current) {
+        if (packet.type === "move") {
+            const validMove = packet.player.x == packet.player.targetX && packet.player.y == packet.player.targetY && maze[packet.player.arrY + packet.direction.y]?.[packet.player.arrX + packet.direction.x] == 0
+            if (validMove) {
+                packet.player.targetX = packet.player.x + (packet.direction.x) * tileSize; 
+                packet.player.targetY = packet.player.y + (packet.direction.y) * tileSize; 
+                movedPlayers.set(packet.player.playerId, {x: packet.player.x, y: packet.player.y, xDir: Math.sign(packet.direction.x)  , yDir: Math.sign(packet.direction.y) });
+                packet.player.facing.x =  Math.sign(packet.direction.x); 
+                packet.player.facing.y = Math.sign(packet.direction.y); 
+            }
+        } else if (packet.type === "projectile") {
+            const projId = uuidv4(); 
+            const finalArr = findProjectileTarget(packet.player.facing, packet.player.arrX, packet.player.arrY); 
+            if (finalArr.x != packet.player.arrX || finalArr.y != packet.player.arrY ) {  
+                const facingX = packet.player.facing.x; 
+                const facingY = packet.player.facing.y
+                const texture = facingX == 0 ? "projectileVertical" : "projectileHorizontal"  
+                projectiles.set(projId, {playerId: packet.player.playerId, direction: {x: facingX, y: facingY}, alive: true, x: packet.player.x, y: packet.player.y, finalArrX: finalArr.x, finalArrY: finalArr.y, texture: texture})
+                wss.clients.forEach(function each(client) {
+                    if(client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({ type: 'newProjectile', projInfo: { playerId: packet.player.playerId, direction: {x: facingX, y: facingY}, alive: true, x: packet.player.x, y: packet.player.y, finalArrX: finalArr.x, finalArrY: finalArr.y, texture: texture}, projId: projId }));
+                    }
+                })
+                console.log(finalArr.x, finalArr.y); 
+                }
+        }
+        
+    }
+    
 }
 
 function processMovement(xDir, yDir) {
@@ -154,7 +158,7 @@ function processMovement(xDir, yDir) {
 }
 
 function processProjectile() {
-    const completeDuration = 128 // ms
+    const completeDuration = 192 // ms
     const distancePerInt = tileSize / (completeDuration / pingInterval); 
 
     
@@ -182,9 +186,17 @@ function broadcast() {
             movedPlayers.delete(movedPlayer);  
         }
     }
+    let deletedProjectiles = []; 
     for (const [projectile, value] of projectiles) {
         if(value.x >= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x > 0 || value.x <= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x < 0 || value.y >= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y > 0 || value.y <= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y < 0) {
+            deletedProjectiles.push(projectile); 
             projectiles.delete(projectile); 
         }
     }
+
+    wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({type: 'removeProjectile', deletedProjectiles: deletedProjectiles}));                                 
+    }
+    })
 }
