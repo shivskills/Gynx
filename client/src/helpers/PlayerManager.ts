@@ -20,10 +20,16 @@ export default class PlayerManager {
         this.serverCellSize = serverCellSize; 
         this.scene = scene; 
 
+        const graphics = this.scene.add.graphics(); 
+
+        graphics.fillStyle(0x000000, 1); 
+        graphics.fillRect(0,0, cellSize * 0.5 , cellSize * 0.5); 
+        graphics.generateTexture("player", cellSize * 0.5, cellSize * 0.5); 
+        graphics.destroy(); 
 
         const playersMap = new Map<string, PlayerData>(); 
         for (const [key, player] of arr) { 
-                        playersMap.set(key, {sprite: scene.physics.add.sprite(player.x * (this.cellSize / this.serverCellSize), player.y * (this.cellSize / this.serverCellSize), player.texture).setScale(0.5), arrX: player.arrX, arrY: player.arrY, targetX: player.targetX, targetY: player.targetY})
+                        playersMap.set(key, {sprite: scene.physics.add.sprite(player.x * (this.cellSize / this.serverCellSize), player.y * (this.cellSize / this.serverCellSize), player.texture), arrX: player.arrX, arrY: player.arrY, targetX: player.targetX, targetY: player.targetY})
                         if  (key === playerId) {
                             const gameObject = playersMap.get(key).sprite;
                             if (gameObject) {
@@ -32,16 +38,17 @@ export default class PlayerManager {
                         } 
                     }
         this.players = playersMap; 
-        this.playerId = playerId
+        this.playerId = playerId; 
+
 
     }
 
     public addPlayer(playerId: string, playerInfo: {x: number, y: number, texture: string, arrX: number, arrY: number, targetX: number, targetY: number}) {
-       this.players.set(playerId, {sprite: this.scene.physics.add.sprite(playerInfo.x * ((this.cellSize / this.serverCellSize)), playerInfo.y * (this.cellSize / this.serverCellSize), playerInfo.texture).setScale(0.5), arrX: playerInfo.arrX, arrY: playerInfo.arrY, targetX: playerInfo.targetX, targetY: playerInfo.targetY});
+       this.players.set(playerId, {sprite: this.scene.physics.add.sprite(playerInfo.x * ((this.cellSize / this.serverCellSize)), playerInfo.y * (this.cellSize / this.serverCellSize), playerInfo.texture), arrX: playerInfo.arrX, arrY: playerInfo.arrY, targetX: playerInfo.targetX, targetY: playerInfo.targetY});
     }
 
     // *not for handling input but rather retrieving from server* 
-    // x and y are the change in coords in world coords
+    // x and y are the coords in world coords
     public movePlayer(movedPlayers: [string, { x: number; y: number }][]) {
         for (const [playerId, value] of movedPlayers) {
             const player = this.players.get(playerId)

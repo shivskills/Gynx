@@ -8,7 +8,7 @@ const players = new Map();
 const movedPlayers = new Map(); 
 const projectiles = new Map(); 
 const playerIdToWs = new Map();
-const cellToPlayers = new Map(); // column, row --> player ID
+let deadProjectiles = [] // store projIds
 let inputQueue = []
 const mazeCols = 55; // treated as width
 const mazeRows = 50; // treated as height
@@ -31,7 +31,6 @@ wss.on('connection', function connection(ws, req) {
 
     players.set(ws, { x: worldSpawnX, y: worldSpawnY, texture: texture, arrX: spawn.col, arrY: spawn.row, targetX: worldSpawnX, targetY: worldSpawnY, playerId: playerId, facing: {x: 1, y: 0} });
     playerIdToWs.set(playerId, ws); 
-    cellToPlayers.set(`${spawn.col},${spawn.row}`, playerId); 
    
     // send new player to everyone excluding the new player;
     wss.clients.forEach(function each(client) {
@@ -48,8 +47,8 @@ wss.on('connection', function connection(ws, req) {
         
         switch (obj.type) {
             case 'move': {
-            inputQueue.push({type: "move", player: players.get(ws), direction: obj.direction })
-            break; 
+                inputQueue.push({type: "move", player: players.get(ws), direction: obj.direction })
+                break; 
             }
 
             case 'projectile' : {
@@ -151,14 +150,14 @@ function processMovement(xDir, yDir) {
             player.arrX += value.xDir; 
             player.arrY += value.yDir; 
 
-            console.log(`Player at ${player.arrX}, ${player.arrY}`); 
+            console.log(`Player at ${player.x}, ${player.y}`); 
         }
     }
 
 }
 
 function processProjectile() {
-    const completeDuration = 192 // ms
+    const completeDuration = 128 // ms
     const distancePerInt = tileSize / (completeDuration / pingInterval); 
 
     
@@ -167,36 +166,58 @@ function processProjectile() {
         value.y += distancePerInt * value.direction.y; 
        // console.log(`Projectile at ${value.x}, ${value.y}`);
         console.log(`Projectile at ${value.x}, ${value.y}`);
+
+        const playerWidth = (tileSize / 4); 
+        const projectileWidth = (tileSize / 2);
+        const projectileHeight = ( tileSize / 20 )
+        // playerTop = player.y - playerWidth; 
+        // playerBottom = player.y + playerWidth; 
+        // playerRight = player.x + playerWidth; 
+        // playerRight = player.x - playerWithdth; 
+
+
+        // projTop = proj.y - projWidth; etc etc etc 
+
+       
+        for (const [key, playerVal] of players) {
+            if((
+                playerVal.x - playerWidth <= value.x + projectileWidth && // left1 < right2
+                playerVal.x + playerWidth >= value.x - projectileWidth && // right1 > left 
+                playerVal.y - playerWidth <= value.y + projectileHeight &&  // top1 < bottom2
+                playerVal.y + playerWidth >= value.y - projectileHeight // bottom1 > top2
+            ) && value.playerId !== playerVal.playerId) { 
+                projectiles.delete(projectile); 
+                deadProjectiles.push(projectile); 
+            }
+        }
     }
+
+
 }
 
 
 
 function broadcast() {
+    for (const [projectile, value] of projectiles) {
+        if(value.x >= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x > 0 || value.x <= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x < 0 || value.y >= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y > 0 || value.y <= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y < 0) {
+            deadProjectiles.push(projectile); 
+            projectiles.delete(projectile); 
+        }
+    }
     wss.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({type: 'move', movedPlayers: Array.from(movedPlayers)}));          
-        client.send(JSON.stringify({type: 'projectileMove', movedProjectiles: Array.from(projectiles)}));                       
+        client.send(JSON.stringify({type: 'projectileMove', movedProjectiles: Array.from(projectiles)}));    
+        client.send(JSON.stringify({type: 'removeProjectile', deletedProjectiles: deadProjectiles}));                       
     }
     })
-
     for (const [movedPlayer, value] of movedPlayers) {
         const player = players.get(playerIdToWs.get(movedPlayer))
         if (player.x == player.targetX && player.y == player.targetY) {
             movedPlayers.delete(movedPlayer);  
         }
     }
-    let deletedProjectiles = []; 
-    for (const [projectile, value] of projectiles) {
-        if(value.x >= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x > 0 || value.x <= value.finalArrX * tileSize + (tileSize / 2)  && value.direction.x < 0 || value.y >= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y > 0 || value.y <= value.finalArrY * tileSize + (tileSize / 2)  && value.direction.y < 0) {
-            deletedProjectiles.push(projectile); 
-            projectiles.delete(projectile); 
-        }
-    }
 
-    wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({type: 'removeProjectile', deletedProjectiles: deletedProjectiles}));                                 
-    }
-    })
+
+    deadProjectiles = []; 
 }
