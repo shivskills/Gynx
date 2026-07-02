@@ -29,7 +29,7 @@ wss.on('connection', function connection(ws, req) {
     let texture = 'player'; // change later for random texture creation -- maybe by color???
     const playerId = uuidv4();
 
-    players.set(ws, { x: worldSpawnX, y: worldSpawnY, texture: texture, arrX: spawn.col, arrY: spawn.row, targetX: worldSpawnX, targetY: worldSpawnY, playerId: playerId, facing: {x: 1, y: 0} });
+    players.set(ws, { x: worldSpawnX, y: worldSpawnY, texture: texture, arrX: spawn.col, arrY: spawn.row, targetX: worldSpawnX, targetY: worldSpawnY, playerId: playerId, facing: {x: 1, y: 0}, health: 100 });
     playerIdToWs.set(playerId, ws); 
    
     // send new player to everyone excluding the new player;
@@ -39,7 +39,7 @@ wss.on('connection', function connection(ws, req) {
         }
     })
 
-    ws.send(JSON.stringify({ type: 'firstTimePlayer', projectiles: Array.from(projectiles, ([key, projectile]) => [key, { x: projectile.x, y: projectile.y, texture: projectile.texture, finalArrX: projectile.finalArrX, finalArrY: projectile.finalArrY, alive: projectile.alive, playerId: projectile.playerId, direction: {x: projectile.direction.x, y: projectile.direction.y} }]), players: Array.from(players, ([key, player]) => [player.playerId, { x: player.x, y: player.y, texture: player.texture, arrX: player.arrX, arrY: player.arrY, targetX: player.targetX, targetY: player.targetY }]), maze: maze, playerId: playerId, serverCellSize: tileSize })); 
+    ws.send(JSON.stringify({ type: 'firstTimePlayer', projectiles: Array.from(projectiles, ([key, projectile]) => [key, { x: projectile.x, y: projectile.y, texture: projectile.texture, finalArrX: projectile.finalArrX, finalArrY: projectile.finalArrY, alive: projectile.alive, playerId: projectile.playerId, direction: {x: projectile.direction.x, y: projectile.direction.y} }]), players: Array.from(players, ([key, player]) => [player.playerId, { x: player.x, y: player.y, texture: player.texture, arrX: player.arrX, arrY: player.arrY, targetX: player.targetX, targetY: player.targetY }]), maze: maze, playerId: playerId, serverCellSize: tileSize, health: players.get(ws).health })); 
 
     
     ws.on('message', function message(data) {

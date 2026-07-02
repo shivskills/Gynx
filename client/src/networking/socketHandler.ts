@@ -41,7 +41,7 @@ export default class SocketHandler {
                 case "firstTimePlayer" : { // will add all players including itself (self was not already in game)
                     const mapManager = new MapManager(scene, data.maze);
                     mapManager.createMap();
-                    this.playerManager = new PlayerManager(scene, mapManager.getCellSize(), data.playerId, data.players, data.serverCellSize); 
+                    this.playerManager = new PlayerManager(scene, mapManager.getCellSize(), data.playerId, data.players, data.serverCellSize, data.health); 
                     this.projectileManager = new ProjectileManager(scene, mapManager.getCellSize(), data.projectiles, data.serverCellSize); 
                     break;
                 }

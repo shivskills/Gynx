@@ -1,5 +1,4 @@
 import Phaser from "phaser"
-import SocketHandler from "../networking/socketHandler";
 type PlayerData = {
   sprite: Phaser.GameObjects.Sprite
   arrX: number;
@@ -13,9 +12,9 @@ export default class PlayerManager {
     private cellSize: number; 
     private serverCellSize: number; 
     private scene: Phaser.Scene
-    private playerId: string; 
+    private graphics!: Phaser.GameObjects.Graphics;  
 
-    constructor(scene: Phaser.Scene, cellSize: number, playerId: string, arr: [string, {x: number, y: number, texture: string, arrX: number, arrY: number, targetX: number, targetY: number}][], serverCellSize: number) {
+    constructor(scene: Phaser.Scene, cellSize: number, playerId: string, arr: [string, {x: number, y: number, texture: string, arrX: number, arrY: number, targetX: number, targetY: number}][], serverCellSize: number, health: number) {
         this.cellSize = cellSize;
         this.serverCellSize = serverCellSize; 
         this.scene = scene; 
@@ -37,10 +36,10 @@ export default class PlayerManager {
                             }        
                         } 
                     }
-        this.players = playersMap; 
-        this.playerId = playerId; 
-
-
+        this.players = playersMap;) 
+        this.graphics = this.scene.add.graphics(); 
+        this.graphics.setScrollFactor(0);
+        this.setHealth(health);   
     }
 
     public addPlayer(playerId: string, playerInfo: {x: number, y: number, texture: string, arrX: number, arrY: number, targetX: number, targetY: number}) {
@@ -72,6 +71,19 @@ export default class PlayerManager {
 
     public getServerCellSize(): number {
         return this.serverCellSize
+    }
+
+    public setHealth (health: number): void {
+
+        this.graphics.clear(); 
+        this.graphics.fillStyle(0xC5C7C6); 
+        this.graphics.fillRect(20,20,200,10); 
+
+        this.graphics.fillStyle(0x00ff00, 1); 
+        this.graphics.fillRect(20,20, (health / 100) * 200, 10); 
+       
+        
+
     }
 
   

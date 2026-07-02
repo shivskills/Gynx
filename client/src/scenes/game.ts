@@ -7,7 +7,7 @@ import InputHandler from "../helpers/input";
 export default class GameScene extends Phaser.Scene {
    private inputHandler!: InputHandler;
    private socketHandler!: SocketHandler;
-
+   
 
 
   constructor() {
@@ -28,6 +28,7 @@ export default class GameScene extends Phaser.Scene {
     var camera = this.cameras.main
     camera.setZoom(5.5) // 5.5    
     
+    
   }
 
   update() {
@@ -39,6 +40,8 @@ export default class GameScene extends Phaser.Scene {
 
 
   }
+
+ 
 
 }
 
