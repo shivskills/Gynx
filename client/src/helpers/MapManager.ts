@@ -1,8 +1,8 @@
 
 import Phaser from "phaser";
 const size = { // may change this later depending on responsiveness; 
-  width: window.innerWidth,
-  height: window.innerHeight
+  width: window.innerWidth ,
+  height: window.innerHeight  
 };
 
 export default class MapManager {
@@ -15,7 +15,7 @@ export default class MapManager {
     constructor(scene: Phaser.Scene, maze: number[][] ) {
         this.scene = scene;
         this.maze = maze;
-        this.cellSize = (Math.min(size.width / this.maze[0].length, size.height / this.maze.length)); // either width or height will fit perfectly (ex. width per #cols is cell size)
+        this.cellSize = Math.max(size.width / 20, size.height /20); // you can only see 20 at most in either heiight or width
     }
 
     public createMap() {

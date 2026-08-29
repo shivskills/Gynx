@@ -3,16 +3,23 @@ import { v4 as uuidv4 } from 'uuid';
 import { Maze } from '../../../client/src/lib/maze.ts';
 
 
+// delete from players ==> delte from movedPlayers and damagedPlayers
+// when a player dies, do we delete them from players, or on the on close
+
  
 const players = new Map();  
-const movedPlayers = new Map(); 
+const movedPlayers = new Map(); // all players that are undergoing movement right now
+let damagedPlayers = [] // store ws instances of players that lost health after being hit with a projectile
 const projectiles = new Map(); 
 const playerIdToWs = new Map();
-let deadProjectiles = [] // store projIds
-let inputQueue = []
+let deadProjectiles = [] // store projIds of projectiles headed to deletion
+let inputQueue = [] // processes to inputs (movements, projectiles) headed to be processed by the server
+let removedPlayers = []; // store playerIds of players headed to deletion
 const mazeCols = 55; // treated as width
 const mazeRows = 50; // treated as height
 const tileSize = 32; 
+let gameStarted = false; 
+let gameEnded = false; 
 const worldWidth = mazeCols * tileSize; 
 const worldHeight = mazeRows * tileSize; 
 
@@ -20,7 +27,15 @@ const maze = new Maze(mazeCols, mazeRows).initializeMaze();
 
 const wss = new WebSocketServer({ port: 8000 }); 
 wss.on('connection', function connection(ws, req) {
+    ws.isAlive = true; 
     ws.on('error', console.error); 
+    ws.on('pong', heartbeat); 
+    ws.on('close', () => {
+        removedPlayers.push(players.get(ws).playerId); 
+        playerIdToWs.delete(players.get(ws).playerId); 
+        players.delete(ws); 
+        evaluateGameState();
+    })
     console.log('Client connected');
 
     const spawn = findValidSpawn(); 
@@ -30,6 +45,7 @@ wss.on('connection', function connection(ws, req) {
     const playerId = uuidv4();
 
     players.set(ws, { x: worldSpawnX, y: worldSpawnY, texture: texture, arrX: spawn.col, arrY: spawn.row, targetX: worldSpawnX, targetY: worldSpawnY, playerId: playerId, facing: {x: 1, y: 0}, health: 100 });
+    evaluateGameState();
     playerIdToWs.set(playerId, ws); 
    
     // send new player to everyone excluding the new player;
@@ -43,23 +59,25 @@ wss.on('connection', function connection(ws, req) {
 
     
     ws.on('message', function message(data) {
-        const obj = JSON.parse(data); 
-        
-        switch (obj.type) {
-            case 'move': {
-                inputQueue.push({type: "move", player: players.get(ws), direction: obj.direction })
-                break; 
-            }
+        if (gameStarted == true && gameEnded == false) {
+            const obj = JSON.parse(data); 
+            switch (obj.type) {
+                case 'move': {
+                    inputQueue.push({type: "move", player: players.get(ws), direction: obj.direction })
+                    break; 
+                }
 
-            case 'projectile' : {
-                inputQueue.push({type: "projectile", player: players.get(ws) }); 
-                break; 
-            }
+                case 'projectile' : {
+                    inputQueue.push({type: "projectile", player: players.get(ws) }); 
+                    break; 
+                }
 
-            default: {
-                console.warn('unknown message type', obj.type); 
+                default: {
+                    console.warn('unknown message type', obj.type); 
+                }
             }
         }
+        
     });
 });
 
@@ -90,6 +108,26 @@ const findProjectileTarget = ({x, y}, playerArrX, playerArrY) => {
 
     return {x: futureX -= x, y: futureY -= y}; 
 
+}
+// used for essentially starting and ending a game
+const evaluateGameState = () => {
+    if (gameStarted == false && players.size >= 2) {
+        gameStarted = true; 
+        return; 
+    }
+
+    if (gameStarted && gameEnded == false && players.size <= 1) {
+        gameEnded = true;
+        wss.clients.forEach(function each(client) {
+            if(players.get(client) == undefined && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'lose'}));
+            } else if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({type: 'win'})); 
+            }
+        })
+        
+        return; 
+    }
 }
 
 
@@ -180,14 +218,27 @@ function processProjectile() {
 
        
         for (const [key, playerVal] of players) {
-            if((
+            if(value.playerId !== playerVal.playerId && (
                 playerVal.x - playerWidth <= value.x + projectileWidth && // left1 < right2
                 playerVal.x + playerWidth >= value.x - projectileWidth && // right1 > left 
                 playerVal.y - playerWidth <= value.y + projectileHeight &&  // top1 < bottom2
                 playerVal.y + playerWidth >= value.y - projectileHeight // bottom1 > top2
-            ) && value.playerId !== playerVal.playerId) { 
+            )) { 
                 projectiles.delete(projectile); 
                 deadProjectiles.push(projectile); 
+
+
+                if (playerVal.health - 25 == 0) {
+                    removedPlayers.push(playerVal.playerId);
+                    players.delete(key);
+                    playerIdToWs.delete(playerVal.playerId);
+                } else {
+                    damagedPlayers.push(key); 
+                    players.get(key).health -= 25;
+                }
+                
+                
+                evaluateGameState(); 
             }
         }
     }
@@ -208,8 +259,12 @@ function broadcast() {
     if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({type: 'move', movedPlayers: Array.from(movedPlayers)}));          
         client.send(JSON.stringify({type: 'projectileMove', movedProjectiles: Array.from(projectiles)}));    
-        client.send(JSON.stringify({type: 'removeProjectile', deletedProjectiles: deadProjectiles}));                       
+        client.send(JSON.stringify({type: 'removeProjectile', deletedProjectiles: deadProjectiles}));   
+        client.send(JSON.stringify({type: 'removePlayer', removedPlayers: removedPlayers}))                  
     }
+    })
+    damagedPlayers.forEach((ws) => {
+        ws.send(JSON.stringify({type: 'damagedPlayer', health: players.get(ws).health}));     
     })
     for (const [movedPlayer, value] of movedPlayers) {
         const player = players.get(playerIdToWs.get(movedPlayer))
@@ -219,5 +274,35 @@ function broadcast() {
     }
 
 
-    deadProjectiles = []; 
+   
+
+
+
+    deadProjectiles = [];
+    damagedPlayers = []; 
+    removedPlayers = [];  
 }
+
+
+/**  disconnect logic */
+
+//server 
+function heartbeat() {
+  this.isAlive = true;
+}
+
+const interval = setInterval(function ping() {
+  wss.clients.forEach(function each(ws) {
+    if (ws.isAlive === false) return ws.terminate();
+
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', function close() {
+  clearInterval(interval);
+  clearInterval(serverTick); 
+});
+
+

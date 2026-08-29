@@ -29,12 +29,18 @@ export default class InputHandler {
         this.spaceKey = this.scene.input.keyboard?.addKey('SPACE')
 
         this.spaceKey.on("up", (event: KeyboardEvent) => {
+            if (this.scene.isMatchEnded()) {
+                return;
+            }
             this.socketHandler.sendMessage({ type: "projectile" });
         });
 
     }
 
     public move (): void {
+        if (this.scene.isMatchEnded()) {
+            return;
+        }
     
         if (this.cursorKeys?.left.isDown || this.wasdKeys?.A.isDown) {
             this.socketHandler.sendMessage({type: "move", direction: {x: -1, y: 0}});

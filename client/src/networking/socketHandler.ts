@@ -46,12 +46,25 @@ export default class SocketHandler {
                     break;
                 }
                 case "removePlayer" : {
-                    this.playerManager.removePlayer(data.id)
+                    this.playerManager.removePlayer(data.removedPlayers)
                     break; 
                 }
                 case "removeProjectile" : {
                     this.projectileManager.removeProjectile(data.deletedProjectiles); 
                     break; 
+                }
+                case "damagedPlayer" : {
+                    this.playerManager.setHealth(data.health); 
+                    break; 
+                }
+                case "win" : {
+                    scene.showWinScreen();
+                    break;
+                }
+                case "lose" : {
+                    scene.showLoseScreen();
+                    this.playerManager.setHealth(0); 
+                    break;
                 }
                 default: { 
                     console.warn("unknown message from the server: " + data.type)
